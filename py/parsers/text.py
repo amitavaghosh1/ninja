@@ -12,8 +12,9 @@ TEMPLATE_SYNTAXES = [TEMPLATE_VAR_BLOCK, TEMPLATE_IF_BLOCK, TEMPLATE_END_BLOCK, 
 
 class States(Enum):
     IDLE = 1
-    READING_IF = 2
-    READING_VAR = 3
+    READING_VAR = 2
+    READING_IF = 3
+    READING_END = 4
 
 class TokenTypes(Enum):
     VAR = 1
@@ -40,11 +41,18 @@ class TokenizeTextTemplate:
 class ParseTextTemplate:
     def __init__(self):
         self.state = States.IDLE
+        self.tokens = []
+        self.ifstart = ""
+
+    def __reset_tokens(self):
+        self.tokens = []
 
     def read_token(self, token):
         if self.state == States.IDLE:
             if token == TEMPLATE_IF_BLOCK:
                 self.state = States.READING_IF
+            if token == TEMPLATE_END_BLOCK:
+                self.state = States.READING_END
             elif token in [TEMPLATE_VAR_BLOCK, TEMPLATE_TABLE_BLOCK]:
                 self.state = States.READING_VAR
             else:
@@ -52,7 +60,19 @@ class ParseTextTemplate:
 
         match self.state:
             case States.READING_IF:
-                pass
+                if token == '}':
+                    self.ifstart = ''.join(self.tokens).strip()
+                    self.__reset_tokens()
+
+                self.tokens.append(token)
+            case States.READING_END:
+                if token == '}':
+                    endtag = ''.join(self.tokens).strip()
+                    if endtag != self.ifstart:
+                        raise Exception("%s if block mismatch" % self.ifstart)
+                    self.__reset_tokens()
+
+                self.tokens.append(token)
             case States.READING_VAR:
                 pass
             case _:
@@ -60,6 +80,38 @@ class ParseTextTemplate:
 
         self.state = States.IDLE
         return None
+
+    def read_if(self, token):
+        pass
+
+    def read_var(self):
+        pass
+
+    def read_string(self):
+        pass
+
+
+class Reader:
+    def __init__(self, string):
+        self.string = string
+        self.index = 0
+
+    def read(self):
+        if len(self.string) <= self.index:
+            return None
+
+        c = self.string[self.index]
+        self.index += 1
+        return c
+
+    def read_n(self, n: int):
+        if len(self.string) <= self.index:
+            return None
+
+        c = self.string[0:n]
+        self.index += n
+        return c
+
 
 
 def read(string):
@@ -74,6 +126,5 @@ def read(string):
         token = p.read_token(data)
         if token is None:
             raise Exception("broke!!")
-
 
 
