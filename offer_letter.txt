@@ -1,0 +1,8 @@
+{%= fullName %}
+
+{%# hasEmail %}
+Your email {%= email %}
+{%/ hasEmail %}
+
+{%@ table_data %}
+
