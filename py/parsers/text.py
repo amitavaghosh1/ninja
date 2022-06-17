@@ -15,6 +15,7 @@ class States(Enum):
     READING_VAR = 2
     READING_IF = 3
     READING_END = 4
+    READING_TABLE = 5
 
 class TokenTypes(Enum):
     VAR = 1
@@ -53,8 +54,10 @@ class ParseTextTemplate:
                 self.state = States.READING_IF
             if token == TEMPLATE_END_BLOCK:
                 self.state = States.READING_END
-            elif token in [TEMPLATE_VAR_BLOCK, TEMPLATE_TABLE_BLOCK]:
+            elif token == TEMPLATE_VAR_BLOCK:
                 self.state = States.READING_VAR
+            elif token == TEMPLATE_TABLE_BLOCK:
+                self.state = States.READING_TABLE
             else:
                 pass
 
@@ -63,6 +66,7 @@ class ParseTextTemplate:
                 if token == '}':
                     self.ifstart = ''.join(self.tokens).strip()
                     self.__reset_tokens()
+                    return Token("if", self.ifstart)
 
                 self.tokens.append(token)
             case States.READING_END:
@@ -71,24 +75,38 @@ class ParseTextTemplate:
                     if endtag != self.ifstart:
                         raise Exception("%s if block mismatch" % self.ifstart)
                     self.__reset_tokens()
+                    self.state = States.IDLE # this should be recursive to support nested if
+                    return Token("end", self.ifstart)
 
                 self.tokens.append(token)
             case States.READING_VAR:
-                pass
+                if token == '}':
+                    t = ''.join(self.tokens)
+                    self.__reset_tokens()
+                    return Token("var", t)
+
+                self.tokens.append(token)
+            case States.READING_TABLE:
+                if token == '}':
+                    t = ''.join(self.tokens)
+                    self.__reset_tokens()
+                    return Token("table", t)
+
+                self.tokens.append(token)
             case _:
                 pass
 
         self.state = States.IDLE
         return None
 
-    def read_if(self, token):
-        pass
+    # def read_if(self, token):
+        # pass
 
-    def read_var(self):
-        pass
+    # def read_var(self):
+        # pass
 
-    def read_string(self):
-        pass
+    # def read_string(self):
+        # pass
 
 
 class Reader:
