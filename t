@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python3 -m py "$@"
+python3.10 -m py "$@"
