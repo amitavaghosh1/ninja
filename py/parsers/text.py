@@ -36,6 +36,12 @@ class TokenizeTextTemplate:
         if token_so_far in TEMPLATE_SYNTAXES:
             self.chars = []
             return token_so_far
+
+        return None
+
+    def rest(self):
+        if len(self.chars) > 0:
+            return ''.join(self.chars)
         return None
 
 
@@ -61,6 +67,8 @@ class ParseTextTemplate:
             else:
                 pass
 
+        print("token =>",  token, self.state)
+
         match self.state:
             case States.READING_IF:
                 if token == '}':
@@ -83,6 +91,7 @@ class ParseTextTemplate:
                 if token == '}':
                     t = ''.join(self.tokens)
                     self.__reset_tokens()
+                    print("herere")
                     return Token("var", t)
 
                 self.tokens.append(token)
@@ -96,7 +105,7 @@ class ParseTextTemplate:
             case _:
                 pass
 
-        self.state = States.IDLE
+        # self.state = States.IDLE
         return None
 
     # def read_if(self, token):
@@ -136,6 +145,7 @@ def read(string):
     t = TokenizeTextTemplate()
     p = ParseTextTemplate()
 
+    data = ''
     for c in string:
         data = t.read(c)
         if data is None:
@@ -143,6 +153,15 @@ def read(string):
 
         token = p.read_token(data)
         if token is None:
-            raise Exception("broke!!")
+            continue
+        print(token)
 
+
+    # data = t.rest()
+    # if data is None:
+        # return
+
+    # token = p.read_token(data)
+    # if token is not None:
+        # print(token)
 
