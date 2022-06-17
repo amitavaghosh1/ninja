@@ -1,7 +1,7 @@
 from enum import Enum
 from collections import namedtuple
 
-
+PERCENTAGE = "%"
 TEMPLATE_END = "%}"
 TEMPLATE_VAR_BLOCK = "{%="
 TEMPLATE_IF_BLOCK = "{%#"
@@ -25,17 +25,64 @@ class TokenTypes(Enum):
 
 Token = namedtuple("Token", "tok_type data")
 
-class TokenizeTextTemplate:
-    def __init__(self):
-        self.chars = []
+class Reader:
+    def __init__(self, string):
+        self.string = string
+        self.strlen = len(string)
+        self.index = 0
 
-    def read(self, c):
+    def read(self):
+        if self.strlen <= self.index:
+            return None
+
+        c = self.string[self.index]
+        self.index += 1
+        return c
+
+    def read_n(self, n: int):
+        if self.strlen <= self.index:
+            return None
+
+        c = self.string[0:n]
+        self.index += n
+        return c
+
+    def peek(self):
+        if self.strlen < self.index:
+            return None
+        return self.string[self.index]
+
+
+    def peek_n(self, n):
+        return self.string[self.index:self.index+n]
+
+    def eof(self):
+        return self.index >= self.strlen
+
+
+class TokenizeTextTemplate:
+    def __init__(self, reader):
+        self.chars = []
+        self.reader = reader
+
+    def read(self):
+        c = self.reader.read()
         self.chars.append(c)
 
-        token_so_far = ''.join(self.chars)
-        if token_so_far in TEMPLATE_SYNTAXES:
+        tokens_so_far = ''.join(self.chars)
+
+        if tokens_so_far in TEMPLATE_SYNTAXES:
             self.chars = []
-            return token_so_far
+            return tokens_so_far
+
+        print("x", self.reader.peek_n(2))
+        if self.reader.peek_n(2) == TEMPLATE_END:
+            self.chars = []
+            return tokens_so_far
+
+        if c == PERCENTAGE and self.reader.peek() == '}':
+            self.chars = []
+            return tokens_so_far + self.reader.read()
 
         return None
 
@@ -44,15 +91,21 @@ class TokenizeTextTemplate:
             return ''.join(self.chars)
         return None
 
-
 class ParseTextTemplate:
     def __init__(self):
         self.state = States.IDLE
         self.tokens = []
         self.ifstart = ""
 
-    def __reset_tokens(self):
+    def __reset_tokens__(self):
         self.tokens = []
+
+    def __reset_state__(self):
+        self.state = States.IDLE
+
+    def __reset__(self):
+        self.__reset_tokens__()
+        self.__reset_state__()
 
     def read_token(self, token):
         if self.state == States.IDLE:
@@ -67,41 +120,44 @@ class ParseTextTemplate:
             else:
                 pass
 
-        print("token =>",  token, self.state)
+        # print("token =>",  token, self.state)
 
         match self.state:
             case States.READING_IF:
-                if token == '}':
+                self.tokens.append(token)
+
+                if token == TEMPLATE_END:
                     self.ifstart = ''.join(self.tokens).strip()
-                    self.__reset_tokens()
+                    self.__reset_tokens__()
                     return Token("if", self.ifstart)
 
-                self.tokens.append(token)
             case States.READING_END:
-                if token == '}':
+                self.tokens.append(token)
+
+                if token == TEMPLATE_END:
                     endtag = ''.join(self.tokens).strip()
                     if endtag != self.ifstart:
                         raise Exception("%s if block mismatch" % self.ifstart)
-                    self.__reset_tokens()
-                    self.state = States.IDLE # this should be recursive to support nested if
+                    self.__reset__()
+                    # self.state = States.IDLE # this should be recursive to support nested if
                     return Token("end", self.ifstart)
 
-                self.tokens.append(token)
             case States.READING_VAR:
-                if token == '}':
+                self.tokens.append(token)
+
+                if token == TEMPLATE_END:
                     t = ''.join(self.tokens)
-                    self.__reset_tokens()
-                    print("herere")
+                    self.__reset__()
                     return Token("var", t)
 
-                self.tokens.append(token)
             case States.READING_TABLE:
-                if token == '}':
+                self.tokens.append(token)
+
+                if token == TEMPLATE_END:
                     t = ''.join(self.tokens)
-                    self.__reset_tokens()
+                    self.__reset__()
                     return Token("table", t)
 
-                self.tokens.append(token)
             case _:
                 pass
 
@@ -118,44 +174,22 @@ class ParseTextTemplate:
         # pass
 
 
-class Reader:
-    def __init__(self, string):
-        self.string = string
-        self.index = 0
-
-    def read(self):
-        if len(self.string) <= self.index:
-            return None
-
-        c = self.string[self.index]
-        self.index += 1
-        return c
-
-    def read_n(self, n: int):
-        if len(self.string) <= self.index:
-            return None
-
-        c = self.string[0:n]
-        self.index += n
-        return c
-
-
-
 def read(string):
-    t = TokenizeTextTemplate()
+    r = Reader(string)
+    t = TokenizeTextTemplate(r)
     p = ParseTextTemplate()
 
     data = ''
-    for c in string:
-        data = t.read(c)
+    while not r.eof():
+        data = t.read()
         if data is None:
             continue
 
         token = p.read_token(data)
         if token is None:
             continue
-        print(token)
 
+        print(token)
 
     # data = t.rest()
     # if data is None:
