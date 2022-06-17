@@ -10,6 +10,13 @@ TEMPLATE_TABLE_BLOCK = "{%@"
 
 TEMPLATE_SYNTAXES = [TEMPLATE_VAR_BLOCK, TEMPLATE_IF_BLOCK, TEMPLATE_END_BLOCK, TEMPLATE_TABLE_BLOCK]
 
+class Keywords:
+    TEMPLATE_END = "%}"
+    TEMPLATE_VAR_BLOCK = "{%="
+    TEMPLATE_IF_BLOCK = "{%#"
+    TEMPLATE_END_BLOCK = "{%/"
+    TEMPLATE_TABLE_BLOCK = "{%@"
+
 class States(Enum):
     IDLE = 1
     READING_VAR = 2
@@ -67,20 +74,24 @@ class TokenizeTextTemplate:
 
     def read(self):
         c = self.reader.read()
+
         self.chars.append(c)
 
         tokens_so_far = ''.join(self.chars)
 
-        if tokens_so_far in TEMPLATE_SYNTAXES:
+        # print("tsf", tokens_so_far)
+        if tokens_so_far.strip() in TEMPLATE_SYNTAXES:
             self.chars = []
             return tokens_so_far
 
-        print("x", self.reader.peek_n(2))
+        # print("x >%s %s" % (c, self.reader.peek_n(2)))
         if self.reader.peek_n(2) == TEMPLATE_END:
+            # print("temp end")
             self.chars = []
             return tokens_so_far
 
         if c == PERCENTAGE and self.reader.peek() == '}':
+            # print("temp end 2")
             self.chars = []
             return tokens_so_far + self.reader.read()
 
@@ -108,19 +119,32 @@ class ParseTextTemplate:
         self.__reset_state__()
 
     def read_token(self, token):
-        if self.state == States.IDLE:
-            if token == TEMPLATE_IF_BLOCK:
-                self.state = States.READING_IF
-            if token == TEMPLATE_END_BLOCK:
-                self.state = States.READING_END
-            elif token == TEMPLATE_VAR_BLOCK:
-                self.state = States.READING_VAR
-            elif token == TEMPLATE_TABLE_BLOCK:
-                self.state = States.READING_TABLE
-            else:
-                pass
+        # if self.state == States.IDLE:
+            # if token == TEMPLATE_IF_BLOCK:
+                # self.state = States.READING_IF
+            # if token == TEMPLATE_END_BLOCK:
+                # self.state = States.READING_END
+            # elif token == TEMPLATE_VAR_BLOCK:
+                # self.state = States.READING_VAR
+            # elif token == TEMPLATE_TABLE_BLOCK:
+                # self.state = States.READING_TABLE
+            # else:
+                # pass
 
-        # print("token =>",  token, self.state)
+        # print("token =>",  token, self.state, token.strip() == TEMPLATE_TABLE_BLOCK)
+
+        if self.state == States.IDLE:
+            match token.strip():
+                case Keywords.TEMPLATE_IF_BLOCK:
+                    self.state = States.READING_IF
+                case Keywords.TEMPLATE_END_BLOCK:
+                    self.state = States.READING_END
+                case Keywords.TEMPLATE_VAR_BLOCK:
+                    self.state = States.READING_VAR
+                case Keywords.TEMPLATE_TABLE_BLOCK:
+                    self.state = States.READING_TABLE
+                case _:
+                    pass
 
         match self.state:
             case States.READING_IF:
@@ -159,6 +183,7 @@ class ParseTextTemplate:
                     return Token("table", t)
 
             case _:
+                # self.__reset__()
                 pass
 
         # self.state = States.IDLE
