@@ -1,17 +1,23 @@
 import sys
 from py.readers.text import TextReader
-from py.parsers.text import Lexer
+from py.parsers.text import Lexer, Parser
 
 def run(filename: str):
     reader = TextReader(filename)
     lex = Lexer(reader)
 
-    while lex.peek():
-        token = lex.next()
-        if token is None:
-            continue
+    # while lex.peek():
+        # token = lex.next()
+        # if token is None:
+            # continue
 
-        print(token)
+        # print(token)
+
+    parser = Parser(lex)
+    data = parser.parse()
+    print(data)
+
+
 
 if __name__ == "__main__":
     run(sys.argv[1])
