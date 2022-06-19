@@ -1,8 +1,11 @@
-{%= fullName %}
+{%= date %}
+
+Hi, {%= user.fullname %}.
 
 {%# hasEmail %}
-Your email {%= email %}
+    {%# isGoogleEmail %}You have a
+    gmail email
+    {%/ isGoogleEmail %}
 {%/ hasEmail %}
 
 {%@ table_data %}
-
