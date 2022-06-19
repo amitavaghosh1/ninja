@@ -19,7 +19,6 @@ class TextReader(Reader):
             return None
         return self.string[self.index]
 
-
     def eof(self):
         return self.index >= self.strlen
 

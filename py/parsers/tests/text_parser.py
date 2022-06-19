@@ -6,8 +6,8 @@ def run(filename: str):
     reader = TextReader(filename)
     lex = Lexer(reader)
 
-    while not lex.eof():
-        token = lex.read()
+    while lex.peek():
+        token = lex.next()
         if token is None:
             continue
 

@@ -140,7 +140,14 @@ class ExpressionTypeToken:
         Symbol.SLASH: ExpressionTokens.End,
     }
 
-    __ReverseMap__ = {value: key for key, value in SymbolMap}
+    __ReverseMap__ = {
+        ExpressionTokens.Table: Symbol.AT,
+        ExpressionTokens.Equals: Symbol.EQUALS,
+        ExpressionTokens.If: Symbol.HASH,
+        ExpressionTokens.End: Symbol.SLASH,
+    }
+
+    # value: key for key, value in ExpressionTypeToken.SymbolMap}
 
     def __init__(self, symbol):
         self.symbol = symbol
@@ -160,12 +167,38 @@ class Lexer:
         self.reader = reader
         self.state = LexerStates.IDLE
         self.buffer = ArrayBuffer()
+        self.peeked_token = None
 
     def eof(self):
         return self.reader.eof()
 
     def peek(self):
-        pass
+        if self.peeked_token:
+            return self.peeked_token
+
+        token = self.read_token()
+        self.peeked_token = token
+        return token
+
+    def next(self):
+        if self.peeked_token:
+            peeked_token = self.peeked_token
+            self.peeked_token = None
+            return peeked_token
+
+        return self.read_token()
+
+    def read_token(self):
+        if self.eof():
+            return None
+
+        while True:
+            token = self.read()
+            if not token:
+                continue
+            if isinstance(token, EOF):
+                return None
+            return token
 
     def read(self):
         if self.reader.eof():
@@ -212,13 +245,9 @@ class Lexer:
                 pass
 
 
-class ParserStates:
-    IDLE = None
-
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
-        self.state = ParserStates.IDLE
         self.buffer = ArrayBuffer()
 
     def parse(self):
