@@ -1,3 +1,4 @@
+from typing import Text
 from py.readers.reader import Reader
 from copy import deepcopy
 # from dataclasses import dataclass
@@ -78,12 +79,21 @@ class LexerStates:
     READING_EXPRESSION = "READING_EXPRESSION"
 
 
+class ExpressionTokens:
+    Equals = "equals"
+    Table = "table"
+    If = "if"
+    End = "end"
+
 class ArrayBuffer:
     def __init__(self):
         self.buf = []
 
     def append(self, v):
         self.buf.append(v)
+
+    def pop(self):
+        return self.buf.pop()
 
     def drain(self):
         result = deepcopy(self.buf)
@@ -124,17 +134,22 @@ class ExpressionToken:
 
 class ExpressionTypeToken:
     SymbolMap = {
-        Symbol.AT: "table",
-        Symbol.EQUALS: "equals",
-        Symbol.HASH: "if",
-        Symbol.SLASH: "end",
+        Symbol.AT: ExpressionTokens.Table,
+        Symbol.EQUALS: ExpressionTokens.Equals,
+        Symbol.HASH: ExpressionTokens.If,
+        Symbol.SLASH: ExpressionTokens.End,
     }
+
+    __ReverseMap__ = {value: key for key, value in SymbolMap}
 
     def __init__(self, symbol):
         self.symbol = symbol
 
     def val(self) -> str:
         return ExpressionTypeToken.SymbolMap[self.symbol]
+
+    def __eq__(self, key) -> bool:
+        return isinstance(key, str) and key.strip() in ExpressionTypeToken.__ReverseMap__
 
     def __str__(self):
         return "EXPR_TYPE: %s" % ExpressionTypeToken.SymbolMap[self.symbol]
@@ -204,6 +219,7 @@ class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
         self.state = ParserStates.IDLE
+        self.buffer = ArrayBuffer()
 
     def parse(self):
         token = self.lexer.read()
@@ -213,16 +229,69 @@ class Parser:
 
         while token:
             if isinstance(token, ExpressionTypeToken):
-                self.parse_expression()
+                self.parse_expression(token)
             if isinstance(token, TextToken):
-                self.parse_text()
+                self.parse_text(token)
 
-    def parse_expression(self):
-        pass
+    def parse_expression(self, token):
+        match token:
+            case ExpressionTokens.Equals:
+                self.parse_expression_equals()
+            case ExpressionTokens.Table:
+                self.parse_expression_table()
+            case ExpressionTokens.If:
+                self.parse_expression_if()
+            case _:
+                raise SyntaxError("INVALID_EXPRESSION")
 
-    def parse_text(self):
-        pass
+        if self.state == None:
+            pass
+        elif self.state == "parsing-if-start":
+            self.read_if_body()
+        elif self.state == "reading-text":
+            pass
 
+    def parse_expression_equals(self):
+        # pass
+        token = self.lexer.read()
+
+        if not isinstance(token, ExpressionToken):
+            raise SyntaxError('invalid expression, equals')
+        return token
+
+    def parse_expression_table(self):
+        # pass
+        token = self.lexer.read()
+
+        if not isinstance(token, ExpressionToken):
+            raise SyntaxError('invalid expression, table')
+        return token
+
+    def parse_expression_if(self):
+        # pass
+        token = self.lexer.read()
+
+        if not isinstance(token, ExpressionToken):
+            raise SyntaxError('invalid syntax for if, need experience')
+
+        self.state = "parsing-if-start"
+
+    def read_if_body(self):
+       pass
+
+    def parse_text(self, token):
+        # pass
+        self.buffer.append(token)
+        next_token = self.lexer.peek()
+
+        while next_token:
+            if isinstance(next_token, ExpressionToken):
+                self.state = "reading-expression"
+                return ''.join(self.buffer.drain())
+            elif isinstance(next_token, Text):
+                self.buffer.append(self.lexer.read())
+            else:
+                raise SyntaxError('invalid syntax')
 
 
 class TexTemplateParser:
