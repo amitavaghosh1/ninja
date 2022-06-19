@@ -70,7 +70,7 @@ class Symbol:
     ALL = [LEFT_BRACE, RIGHT_BRACE, PERCENTAGE, EQUALS, AT, HASH, SLASH]
 
 
-class States:
+class LexerStates:
     IDLE = None
     READING_LEFT_BRACE = "READING_LEFT_BRACE"
     READING_SYMBOL = "READING_SYMBOL"
@@ -143,18 +143,20 @@ class ExpressionTypeToken:
 class Lexer:
     def __init__(self, reader: Reader):
         self.reader = reader
-        self.state = States.IDLE
+        self.state = LexerStates.IDLE
         self.buffer = ArrayBuffer()
 
     def eof(self):
         return self.reader.eof()
 
+    def peek(self):
+        pass
+
     def read(self):
-        # pass
         if self.reader.eof():
-            if self.state == States.READING_NORMAL_TEXT:
+            if self.state == LexerStates.READING_NORMAL_TEXT:
                 return EOF(TextToken(self.buffer.drain()))
-            if self.state == States.READING_EXPRESSION:
+            if self.state == LexerStates.READING_EXPRESSION:
                 return EOF(ExpressionToken(self.buffer.drain()))
             return EOF(None)
 
@@ -163,46 +165,62 @@ class Lexer:
         match self.state:
             case None:
                 if character == Symbol.LEFT_BRACE:
-                    self.state = States.READING_LEFT_BRACE
+                    self.state = LexerStates.READING_LEFT_BRACE
                 else:
-                    self.state = States.READING_NORMAL_TEXT
-            case States.READING_LEFT_BRACE:
+                    self.state = LexerStates.READING_NORMAL_TEXT
+            case LexerStates.READING_LEFT_BRACE:
                 if character == Symbol.PERCENTAGE:
-                    self.state = States.READING_SYMBOL
+                    self.state = LexerStates.READING_SYMBOL
                 else:
-                    self.state = States.READING_NORMAL_TEXT
+                    self.state = LexerStates.READING_NORMAL_TEXT
                     self.buffer.append(Symbol.LEFT_BRACE)
-            case States.READING_NORMAL_TEXT:
+            case LexerStates.READING_NORMAL_TEXT:
                 if character == Symbol.LEFT_BRACE:
-                    self.state = States.READING_LEFT_BRACE
-                    text_so_far = TextToken(self.buffer.drain())
-                    # print("buf => ", self.buffer)
-                    return text_so_far
+                    self.state = LexerStates.READING_LEFT_BRACE
+                    return TextToken(self.buffer.drain())
                 else:
                     self.buffer.append(character)
-            case States.READING_SYMBOL:
+            case LexerStates.READING_SYMBOL:
                 if character in Symbol.ALL:
-                    self.state = States.READING_EXPRESSION
+                    self.state = LexerStates.READING_EXPRESSION
                     return ExpressionTypeToken(character)
                 else:
                     raise SyntaxError("INVALID_SYNTAX %s" % character)
-            case States.READING_EXPRESSION:
+            case LexerStates.READING_EXPRESSION:
                 if character == Symbol.PERCENTAGE:
                     assert self.reader.peek() == Symbol.RIGHT_BRACE, 'SyntaxError: invalid_syntax'
-                    # end of parsing expression
-                    self.state = States.IDLE
-                    expression_so_far = ExpressionToken(self.buffer.drain())
-                    return expression_so_far
+                    self.state = LexerStates.IDLE  # end of parsing expression
+                    return ExpressionToken(self.buffer.drain())
                 else:
                     self.buffer.append(character)
             case _:
                 pass
 
+
+class ParserStates:
+    IDLE = None
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
+        self.state = ParserStates.IDLE
 
     def parse(self):
+        token = self.lexer.read()
+
+        if isinstance(token, EOF):
+            return "something"
+
+        while token:
+            if isinstance(token, ExpressionTypeToken):
+                self.parse_expression()
+            if isinstance(token, TextToken):
+                self.parse_text()
+
+    def parse_expression(self):
+        pass
+
+    def parse_text(self):
         pass
 
 
