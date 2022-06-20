@@ -2,7 +2,8 @@ import pprint
 
 from py.readers.text import TextReader
 from py.parsers.engine import EqualsExpression, TableExpression, IfExpression, TextExpression
-from py.parsers.engine import Lexer, Parser
+from py.parsers.lexer import Lexer
+from py.parsers.engine import Parser
 
 class TextTemplateParser:
     def __init__(self, filename, context: dict):
