@@ -1,7 +1,7 @@
 import pprint
 
 from py.readers.text import TextReader
-from py.parsers.engine import EqualsExpression, TableExpression, IfExpression, TextExpression
+from py.parsers.engine import EqualsExpression, TableExpression, IfExpression, TextExpression, UnlessExpression
 from py.parsers.lexer import Lexer
 from py.parsers.engine import Parser
 
@@ -23,7 +23,6 @@ class TextTemplateParser:
             result.extend(self.parse_token(expr))
         return result
 
-
     def parse_token(self, expr):
         if isinstance(expr, EqualsExpression):
             return str(eval(expr.token.val(), self.context))
@@ -34,6 +33,12 @@ class TextTemplateParser:
                 return self.parse_expressions(expr.consequences)
             else:
                 return ""
+        if isinstance(expr, UnlessExpression):
+            if not eval(expr.condition.val(), self.context):
+                return self.parse_expressions(expr.consequences)
+            else:
+                return ""
+
         if isinstance(expr, TextExpression):
             return str(expr.text.val())
 

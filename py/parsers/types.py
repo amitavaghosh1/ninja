@@ -6,7 +6,8 @@ class Symbol:
     HASH = "#"
     AT = "@"
     SLASH = "/"
-    ALL = [LEFT_BRACE, RIGHT_BRACE, PERCENTAGE, EQUALS, AT, HASH, SLASH]
+    NOT = "^"
+    ALL = [LEFT_BRACE, RIGHT_BRACE, PERCENTAGE, EQUALS, AT, HASH, SLASH, NOT]
 
 
 class LexerStates:
@@ -22,6 +23,7 @@ class ExpressionTokens:
     Table = "table"
     If = "if"
     End = "end"
+    Unless = "unless"
 
 class EOF:
     def __init__(self, token) -> None:
@@ -62,13 +64,7 @@ class ExpressionTypeToken:
         Symbol.EQUALS: ExpressionTokens.Equals,
         Symbol.HASH: ExpressionTokens.If,
         Symbol.SLASH: ExpressionTokens.End,
-    }
-
-    __ReverseMap__ = {
-        ExpressionTokens.Table: Symbol.AT,
-        ExpressionTokens.Equals: Symbol.EQUALS,
-        ExpressionTokens.If: Symbol.HASH,
-        ExpressionTokens.End: Symbol.SLASH,
+        Symbol.NOT: ExpressionTokens.Unless,
     }
 
     def __init__(self, symbol):
@@ -83,5 +79,4 @@ class ExpressionTypeToken:
 
     def __str__(self):
         return "EXPR_TYPE: %s" % ExpressionTypeToken.SymbolMap[self.symbol]
-
 

@@ -69,6 +69,8 @@ class Parser:
             return self.parse_expression_table()
         elif token == ExpressionTokens.If:
             return self.parse_expression_if()
+        elif token == ExpressionTokens.Unless:
+            return self.parse_expression_unless()
         else:
             raise SyntaxError('invalid syntax for expression')
 
@@ -86,6 +88,19 @@ class Parser:
         # { "type": ExpressionTokens.Table, "var": v }
         return TableExpression(v)
 
+    def parse_expression_unless(self):
+        condition = self.lexer.next()
+        assert isinstance(condition, ExpressionToken), 'invalid token %s' % condition
+
+        consequences = self.parse()
+
+        end = self.lexer.next()
+        assert isinstance(end, ExpressionTypeToken) and end == ExpressionTokens.End, 'if missing end'
+
+        endexpr = self.lexer.next()
+        assert isinstance(endexpr, ExpressionToken) and endexpr == condition, 'if closed unexpectedly'
+        return UnlessExpression(condition, consequences)
+
     def parse_expression_if(self):
         condition = self.lexer.next()
         assert isinstance(condition, ExpressionToken), 'invalid token %s' % condition
@@ -98,6 +113,12 @@ class Parser:
         endexpr = self.lexer.next()
         assert isinstance(endexpr, ExpressionToken) and endexpr == condition, 'if closed unexpectedly'
         return IfExpression(condition, consequences)
+
+class UnlessExpression:
+    def __init__(self, condition: ExpressionToken, consequences: list) -> None:
+        self.type = ExpressionTokens.Unless
+        self.condition = condition
+        self.consequences = consequences
 
 
 class IfExpression:

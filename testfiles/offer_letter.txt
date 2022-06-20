@@ -7,3 +7,8 @@ Hi, {%= user.fullname %}.
 {%/ hasEmail %}
 
 {%@ table_data %}
+
+{%^ hasEmail %}
+    You have {%# isGoogleEmail %} a gmail {%/ isGoogleEmail %} email.
+{%/ hasEmail %}
+
