@@ -1,8 +1,5 @@
-from sys import dont_write_bytecode
-from typing import Text
 from py.readers.reader import Reader
 from copy import deepcopy
-# from dataclasses import dataclass
 
 # {%= time.strftime("%Y-%m-%d", time.localtime()) %}
 #  Examples
@@ -109,6 +106,9 @@ class ArrayBuffer:
 class EOF:
     def __init__(self, token) -> None:
         self.token = token
+
+    def val(self):
+        return ""
 
     def __str__(self) -> str:
         return self.token
@@ -279,6 +279,28 @@ class Lexer:
 ## EXPR_TYPE: table
 ## EXPR:  table_data
 
+class IfExpression:
+    def __init__(self, condition: ExpressionToken, consequences: list) -> None:
+        self.type = ExpressionTokens.If
+        self.condition = condition
+        self.consequences = consequences
+
+class EqualsExpression:
+    def __init__(self, token):
+        self.type = ExpressionTokens.Equals
+        self.token = token
+
+class TableExpression:
+    def __init__(self, token):
+        self.type = ExpressionTokens.Table
+        self.token = token
+
+
+class TextExpression:
+    def __init__(self, text) -> None:
+        self.type = "text"
+        self.text = text
+
 class Parser:
     def __init__(self, lexer):
         self.lexer = lexer
@@ -304,13 +326,12 @@ class Parser:
                 buffer.append(expr)
             elif isinstance(token, TextToken):
                 self.lexer.next()
-                buffer.append(token)
+                buffer.append(TextExpression(token))
             else:
                 raise SyntaxError('invalid token')
 
     def parse_expression(self, token):
         # print("parsing token expression ", token, type(token))
-
         if token == ExpressionTokens.Equals:
             return self.parse_expression_equals()
         elif token == ExpressionTokens.Table:
@@ -324,13 +345,15 @@ class Parser:
         v = self.lexer.next()
         assert isinstance(v, ExpressionToken), v
 
-        return { "type": ExpressionTokens.Equals, "var": v }
+        # { "type": ExpressionTokens.Equals, "var": v }
+        return EqualsExpression(v)
 
     def parse_expression_table(self):
         v = self.lexer.next()
         assert isinstance(v, ExpressionToken), v
 
-        return { "type": ExpressionTokens.Table, "var": v }
+        # { "type": ExpressionTokens.Table, "var": v }
+        return TableExpression(v)
 
     def parse_expression_if(self):
         condition = self.lexer.next()
@@ -343,12 +366,7 @@ class Parser:
 
         endexpr = self.lexer.next()
         assert isinstance(endexpr, ExpressionToken) and endexpr == condition, 'if closed unexpectedly'
-        return { "type": "if", "condition": condition, "consequences": consequences }
+        return IfExpression(condition, consequences)
 
 
-class TextTemplateParser:
-    def __init__(self, filename):
-        self.parser = Parser(Lexer(filename))
 
-    def parse(self):
-        tokens = self.parser.parse()
