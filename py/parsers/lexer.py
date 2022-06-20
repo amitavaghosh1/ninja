@@ -94,8 +94,9 @@ class Lexer:
             token = self.read()
             if not token:
                 continue
-            if isinstance(token, EOF):
-                return None
+            # if isinstance(token, EOF):
+                # print("eof", token)
+                # return None if token is None
             return token
 
     def read(self):
@@ -113,6 +114,7 @@ class Lexer:
                 if character == Symbol.LEFT_BRACE:
                     self.state = LexerStates.READING_LEFT_BRACE
                 else:
+                    self.buffer.append(character)
                     self.state = LexerStates.READING_NORMAL_TEXT
             case LexerStates.READING_LEFT_BRACE:
                 if character == Symbol.PERCENTAGE:
@@ -135,6 +137,7 @@ class Lexer:
             case LexerStates.READING_EXPRESSION:
                 if character == Symbol.PERCENTAGE:
                     assert self.reader.peek() == Symbol.RIGHT_BRACE, 'SyntaxError: invalid_syntax'
+                    self.reader.read()
                     self.state = LexerStates.IDLE  # end of parsing expression
                     return ExpressionToken(self.buffer.drain())
                 else:

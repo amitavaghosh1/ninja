@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<body>
+{%= date %}
+
+<section>
+    <p>{%= user.fullname %}</p>
+    <p>{%= user.address %}</p>
+</section>
+
+<section>
+<p>
+{%# hasEmail %}
+You have {%# isGoogleEmail %} a gmail {%/ isGoogleEmail %} email.
+{%/ hasEmail %}
+</p>
+</section>
+
+<section>
+{%@ table_data %}
+</section>
+
+<section>
+<p>
+
+{%^ hasEmail %}
+You have {%# isGoogleEmail %} a gmail {%/ isGoogleEmail %} email.
+{%/ hasEmail %}
+</p>
+</section>
+</body>
+</html>

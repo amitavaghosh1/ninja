@@ -41,12 +41,16 @@ class Parser:
 
         while True:
             token = self.lexer.peek()
-            # print("token ", token)
+            # print("token ", token, type(token), self.lexer.eof())
 
             if not token:
                 return buffer
 
             if isinstance(token, EOF):
+                if isinstance(token.val(), TextToken):
+                    buffer.append(TextExpression(token.val()))
+                elif isinstance(token.val(), ExpressionToken):
+                    buffer.append(self.parse_expression(token.val()))
                 return buffer
 
             if isinstance(token, ExpressionTypeToken):
@@ -95,10 +99,10 @@ class Parser:
         consequences = self.parse()
 
         end = self.lexer.next()
-        assert isinstance(end, ExpressionTypeToken) and end == ExpressionTokens.End, 'if missing end'
+        assert isinstance(end, ExpressionTypeToken) and end == ExpressionTokens.End, 'unless missing end'
 
         endexpr = self.lexer.next()
-        assert isinstance(endexpr, ExpressionToken) and endexpr == condition, 'if closed unexpectedly'
+        assert isinstance(endexpr, ExpressionToken) and endexpr == condition, 'unless closed unexpectedly'
         return UnlessExpression(condition, consequences)
 
     def parse_expression_if(self):

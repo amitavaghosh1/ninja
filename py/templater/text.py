@@ -12,6 +12,7 @@ class TextTemplateParser:
 
     def parse(self):
         expressions = self.parser.parse()
+
         result = self.parse_expressions(expressions)
         return ''.join(result)
 
@@ -42,6 +43,6 @@ class TextTemplateParser:
         if isinstance(expr, TextExpression):
             return str(expr.text.val())
 
-        print(expr, type(expr))
+        # print(expr, type(expr))
         raise SyntaxError('unparseable code')
 

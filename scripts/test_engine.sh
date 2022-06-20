@@ -1,1 +1,2 @@
-python3.10 -m py.parsers.tests.test_engine testfiles/offer_letter.txt
+filename="${1:-testfiles/offer_letter.txt}"
+python3.10 -m py.parsers.tests.test_engine "$filename"

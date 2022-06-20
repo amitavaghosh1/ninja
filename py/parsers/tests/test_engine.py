@@ -1,21 +1,22 @@
 import sys
 from py.readers.text import TextReader
-from py.parsers.engine import Lexer, Parser
+from py.parsers.engine import Parser
+from py.parsers.lexer import Lexer
 
 def run(filename: str):
     reader = TextReader(filename)
     lex = Lexer(reader)
 
-    # while lex.peek():
-    # token = lex.next()
-    # if token is None:
-    # continue
+    while lex.peek():
+        token = lex.next()
+        if token is None:
+            continue
 
-    # print(token)
+        print(token)
 
-    parser = Parser(lex)
-    data = parser.parse()
-    print(data)
+    # parser = Parser(lex)
+    # data = parser.parse()
+    # print(data)
 
 
 

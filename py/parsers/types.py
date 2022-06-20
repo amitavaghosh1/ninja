@@ -30,10 +30,10 @@ class EOF:
         self.token = token
 
     def val(self):
-        return ""
+        return self.token
 
     def __str__(self) -> str:
-        return self.token
+        return "EOF" if self.token is None else str(self.token)
 
 class TextToken:
     def __init__(self, buffer) -> None:
